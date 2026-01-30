@@ -1,0 +1,62 @@
+name: 'Scintillator VRT'
+description: 'All-in-one but Minimalistic Visual Regression Testing on Cloudflare R2'
+author: 'Hiro / CUBIREAM LLC'
+branding:
+  icon: 'camera'
+  color: 'blue'
+
+inputs:
+  cf_account_id:
+    description: 'Cloudflare Account ID'
+    required: true
+  r2_access_key_id:
+    description: 'R2 Access Key ID'
+    required: true
+  r2_secret_access_key:
+    description: 'R2 Secret Access Key'
+    required: true
+  
+  bucket:
+    description: 'R2 Bucket Name'
+    required: false
+    default: 'visual-regression-test'
+  
+  test_command:
+    description: 'Command to run visual regression tests (e.g. pnpm lost-pixel)'
+    required: true
+    default: 'pnpm test:vrt'
+
+runs:
+  using: "composite"
+  steps:
+    - name: 📥 Restore Baseline
+      shell: bash
+      run: npx @cubiream/scintillator-cli restore --bucket "${{ inputs.bucket }}"
+      env:
+        CF_ACCOUNT_ID: ${{ inputs.cf_account_id }}
+        R2_ACCESS_KEY_ID: ${{ inputs.r2_access_key_id }}
+        R2_SECRET_ACCESS_KEY: ${{ inputs.r2_secret_access_key }}
+
+    - name: 📸 Run Visual Tests
+      shell: bash
+      run: ${{ inputs.test_command }}
+
+    - name: 📤 Upload Artifacts
+      if: always()
+      shell: bash
+      run: npx @cubiream/scintillator-cli upload --bucket "${{ inputs.bucket }}"
+      env:
+        CF_ACCOUNT_ID: ${{ inputs.cf_account_id }}
+        R2_ACCESS_KEY_ID: ${{ inputs.r2_access_key_id }}
+        R2_SECRET_ACCESS_KEY: ${{ inputs.r2_secret_access_key }}
+        GITHUB_SHA: ${{ github.sha }}
+
+    - name: 🚀 Update Baseline
+      if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      shell: bash
+      run: npx @cubiream/scintillator-cli update --bucket "${{ inputs.bucket }}"
+      env:
+        CF_ACCOUNT_ID: ${{ inputs.cf_account_id }}
+        R2_ACCESS_KEY_ID: ${{ inputs.r2_access_key_id }}
+        R2_SECRET_ACCESS_KEY: ${{ inputs.r2_secret_access_key }}
+        PRIMARY_BRANCH: ${{ github.event.repository.default_branch }}
