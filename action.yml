@@ -3,7 +3,7 @@ description: 'All-in-one but Minimalistic Visual Regression Testing on Cloudflar
 author: 'Hiro / CUBIREAM LLC'
 branding:
   icon: 'camera'
-  color: 'blue'
+  color: 'yellow'
 
 inputs:
   cf_account_id:
@@ -36,6 +36,7 @@ runs:
         CF_ACCOUNT_ID: ${{ inputs.cf_account_id }}
         R2_ACCESS_KEY_ID: ${{ inputs.r2_access_key_id }}
         R2_SECRET_ACCESS_KEY: ${{ inputs.r2_secret_access_key }}
+        PRIMARY_BRANCH: ${{ github.event.repository.default_branch }}
 
     - name: 📸 Run Visual Tests
       shell: bash
